@@ -56,3 +56,4 @@ graphify-out/
 # Secrets / credentials
 clouds.yaml
 secure.yaml
+.github/copilot-instructions.md
