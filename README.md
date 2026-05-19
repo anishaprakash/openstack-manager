@@ -20,10 +20,10 @@ A production-ready REST API for managing the **full lifecycle** of OpenStack vir
 
 ### 1. Prerequisites
 
-| Tool | Version |
-|------|---------|
-| Python | ≥ 3.11 |
-| Poetry | ≥ 1.8 |
+| Tool             | Version    |
+| ---------------- | ---------- |
+| Python           | ≥ 3.11     |
+| Poetry           | ≥ 1.8      |
 | Docker + Compose | any recent |
 
 ### 2. Install dependencies
@@ -60,20 +60,20 @@ docker compose up --build
 
 All endpoints live under `/api/v1/vms` and require the `X-API-Key` header.
 
-| Method | Path | Description |
-|--------|------|-------------|
-| `GET` | `/api/v1/vms` | List VMs (filter by status, name) |
-| `POST` | `/api/v1/vms` | Create a VM |
-| `GET` | `/api/v1/vms/{id}` | Get VM details |
-| `DELETE` | `/api/v1/vms/{id}` | Delete a VM |
-| `POST` | `/api/v1/vms/{id}/start` | Start a stopped VM |
-| `POST` | `/api/v1/vms/{id}/stop` | Stop a running VM |
-| `POST` | `/api/v1/vms/{id}/reboot` | Reboot (`?hard=true` for hard reboot) |
-| `POST` | `/api/v1/vms/{id}/resize` | Resize to a new flavor |
-| `POST` | `/api/v1/vms/{id}/resize/confirm` | Confirm pending resize |
-| `POST` | `/api/v1/vms/{id}/resize/revert` | Revert pending resize |
-| `POST` | `/api/v1/vms/{id}/snapshot` | Create a Glance image snapshot |
-| `GET` | `/health` | Liveness probe (no auth required) |
+| Method   | Path                              | Description                           |
+| -------- | --------------------------------- | ------------------------------------- |
+| `GET`    | `/api/v1/vms`                     | List VMs (filter by status, name)     |
+| `POST`   | `/api/v1/vms`                     | Create a VM                           |
+| `GET`    | `/api/v1/vms/{id}`                | Get VM details                        |
+| `DELETE` | `/api/v1/vms/{id}`                | Delete a VM                           |
+| `POST`   | `/api/v1/vms/{id}/start`          | Start a stopped VM                    |
+| `POST`   | `/api/v1/vms/{id}/stop`           | Stop a running VM                     |
+| `POST`   | `/api/v1/vms/{id}/reboot`         | Reboot (`?hard=true` for hard reboot) |
+| `POST`   | `/api/v1/vms/{id}/resize`         | Resize to a new flavor                |
+| `POST`   | `/api/v1/vms/{id}/resize/confirm` | Confirm pending resize                |
+| `POST`   | `/api/v1/vms/{id}/resize/revert`  | Revert pending resize                 |
+| `POST`   | `/api/v1/vms/{id}/snapshot`       | Create a Glance image snapshot        |
+| `GET`    | `/health`                         | Liveness probe (no auth required)     |
 
 ### Example: Create a VM
 
@@ -109,7 +109,7 @@ curl -X POST http://localhost:8000/api/v1/vms/<vm-id>/snapshot \
 poetry run pytest
 ```
 
-Tests use `unittest.mock` to patch `OpenStackVMService` — no real OpenStack cluster is needed.  Coverage is reported to the terminal automatically.
+Tests use `unittest.mock` to patch `OpenStackVMService` — no real OpenStack cluster is needed. Coverage is reported to the terminal automatically.
 
 To run a specific file:
 
@@ -150,7 +150,7 @@ poetry run pytest tests/test_vms.py -v
 
 ### Framework: FastAPI
 
-FastAPI was chosen for its native async support, automatic OpenAPI generation, and tight Pydantic v2 integration.  The combination eliminates entire categories of serialisation bugs and gives us interactive docs for free.
+FastAPI was chosen for its native async support, automatic OpenAPI generation, and tight Pydantic v2 integration. The combination eliminates entire categories of serialisation bugs and gives us interactive docs for free.
 
 ### Dependency Management: Poetry
 
@@ -158,23 +158,23 @@ Poetry provides deterministic installs (`poetry.lock`), clear separation of dev 
 
 ### OpenStack Integration: openstacksdk
 
-`openstacksdk` is the official Python SDK maintained by the OpenStack community.  It normalises differences between OpenStack versions and handles token refresh internally.  All SDK calls are **synchronous** and are dispatched via `asyncio.to_thread` at the router level, keeping the FastAPI event loop unblocked.
+`openstacksdk` is the official Python SDK maintained by the OpenStack community. It normalises differences between OpenStack versions and handles token refresh internally. All SDK calls are **synchronous** and are dispatched via `asyncio.to_thread` at the router level, keeping the FastAPI event loop unblocked.
 
 ### Service Layer
 
-`OpenStackVMService` is a stateless class that opens a fresh SDK connection per call.  This sidesteps token-expiry issues common in long-running services.  The class is the single integration point for OpenStack: the router never imports `openstack` directly, making the SDK swappable in tests and in future multi-cloud scenarios.
+`OpenStackVMService` is a stateless class that opens a fresh SDK connection per call. This sidesteps token-expiry issues common in long-running services. The class is the single integration point for OpenStack: the router never imports `openstack` directly, making the SDK swappable in tests and in future multi-cloud scenarios.
 
 ### Authentication
 
-A simple `X-API-Key` header scheme was chosen as the minimal viable auth for a proof-of-concept.  It is enforced as a FastAPI `Security` dependency so it appears correctly in the OpenAPI schema and can be tested via Swagger UI's Authorize button.
+A simple `X-API-Key` header scheme was chosen as the minimal viable auth for a proof-of-concept. It is enforced as a FastAPI `Security` dependency so it appears correctly in the OpenAPI schema and can be tested via Swagger UI's Authorize button.
 
 ### Error Handling
 
-Three custom exception classes (`VMNotFoundError`, `VMOperationError`, `OpenStackConnectionError`) map to HTTP 404, variable 4xx/5xx, and 503 respectively.  Each has a registered FastAPI handler that returns a consistent JSON error envelope, keeping SDK internals out of API responses.
+Three custom exception classes (`VMNotFoundError`, `VMOperationError`, `OpenStackConnectionError`) map to HTTP 404, variable 4xx/5xx, and 503 respectively. Each has a registered FastAPI handler that returns a consistent JSON error envelope, keeping SDK internals out of API responses.
 
 ### Docker: Multi-Stage Build
 
-The Dockerfile uses a builder stage to install Poetry + dependencies into a `.venv`, then copies only the venv and application source into the slim runtime image.  This keeps the final image small (~120 MB) and free of build tooling.
+The Dockerfile uses a builder stage to install Poetry + dependencies into a `.venv`, then copies only the venv and application source into the slim runtime image. This keeps the final image small (~120 MB) and free of build tooling.
 
 ---
 
@@ -182,15 +182,14 @@ The Dockerfile uses a builder stage to install Poetry + dependencies into a `.ve
 
 All configuration is read from environment variables (or `.env`).
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `API_KEY` | `changeme` | Secret key clients must send in `X-API-Key` |
-| `OS_AUTH_URL` | `http://localhost:5000/v3` | Keystone endpoint |
-| `OS_USERNAME` | `admin` | OpenStack username |
-| `OS_PASSWORD` | `secret` | OpenStack password |
-| `OS_PROJECT_NAME` | `admin` | Project / tenant name |
-| `OS_USER_DOMAIN_NAME` | `Default` | User domain |
-| `OS_PROJECT_DOMAIN_NAME` | `Default` | Project domain |
-| `OS_REGION_NAME` | `RegionOne` | Nova region |
-| `DEBUG` | `false` | Enable debug logging |
-
+| Variable                 | Default                    | Description                                 |
+| ------------------------ | -------------------------- | ------------------------------------------- |
+| `API_KEY`                | `changeme`                 | Secret key clients must send in `X-API-Key` |
+| `OS_AUTH_URL`            | `http://localhost:5000/v3` | Keystone endpoint                           |
+| `OS_USERNAME`            | `admin`                    | OpenStack username                          |
+| `OS_PASSWORD`            | `secret`                   | OpenStack password                          |
+| `OS_PROJECT_NAME`        | `admin`                    | Project / tenant name                       |
+| `OS_USER_DOMAIN_NAME`    | `Default`                  | User domain                                 |
+| `OS_PROJECT_DOMAIN_NAME` | `Default`                  | Project domain                              |
+| `OS_REGION_NAME`         | `RegionOne`                | Nova region                                 |
+| `DEBUG`                  | `false`                    | Enable debug logging                        |
