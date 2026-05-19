@@ -194,28 +194,3 @@ All configuration is read from environment variables (or `.env`).
 | `OS_REGION_NAME` | `RegionOne` | Nova region |
 | `DEBUG` | `false` | Enable debug logging |
 
----
-
-## Roadmap / Backlog
-
-Items below are scoped beyond the initial timebox but represent the natural next steps for a production service.
-
-### Short Term (next sprint)
-- **Token caching** — reuse SDK connections across requests within a TTL window to reduce auth round-trips
-- **Pagination cursors** — replace `limit`-only pagination with OpenStack marker-based cursors for large fleets
-- **`GET /vms/{id}/console`** — return a noVNC / SPICE console URL
-- **Floating IP management** — attach/detach public IPs as a sub-resource (`/vms/{id}/floating-ips`)
-- **Prometheus `/metrics` endpoint** — expose request latency, error rate, and VM counts via `prometheus-fastapi-instrumentator`
-
-### Medium Term
-- **JWT / OAuth2 authentication** — replace API key with short-lived tokens (Keycloak or Dex)
-- **Multi-cloud adapter pattern** — introduce a `BaseVMService` interface so AWS EC2 or GCP Compute Engine backends can be plugged in alongside OpenStack
-- **Background task queue** — use Celery + Redis to track long-running operations (resize, snapshot) and expose a `GET /tasks/{task_id}` status endpoint
-- **Rate limiting** — per-key request throttling via `slowapi`
-- **Audit log** — append-only log of every mutation with actor, timestamp, and before/after state
-
-### Long Term
-- **Kubernetes operator** — expose VM management as a Kubernetes CRD so platform teams can manage VMs declaratively alongside their workloads
-- **Terraform provider** — wrap the API as a Terraform provider for IaC adoption
-- **WebSocket console streaming** — real-time serial console over WebSocket
-- **Cost & quota dashboard** — aggregate flavor pricing and project quota utilisation
