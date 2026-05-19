@@ -124,6 +124,7 @@ async def create_vm(body: VMCreateRequest) -> VMResponse:
 @router.delete(
     "/{vm_id}",
     status_code=status.HTTP_204_NO_CONTENT,
+    response_model=None,
     summary="Delete a virtual machine",
     description="Terminate and permanently delete a VM. This action is **irreversible**.",
 )
