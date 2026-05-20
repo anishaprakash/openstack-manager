@@ -1,7 +1,7 @@
 # ─── Build stage ──────────────────────────────────────────────────────────────
 FROM python:3.11-slim AS builder
 
-ENV POETRY_VERSION=1.8.3 \
+ENV POETRY_VERSION=2.2.1 \
     POETRY_HOME=/opt/poetry \
     POETRY_VIRTUALENVS_IN_PROJECT=true \
     POETRY_NO_INTERACTION=1 \
