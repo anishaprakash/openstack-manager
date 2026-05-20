@@ -2,7 +2,7 @@
 
 [![Tests](https://github.com/anishaprakash/openstack-manager/actions/workflows/tests.yml/badge.svg)](https://github.com/anishaprakash/openstack-manager/actions/workflows/tests.yml)
 [![Docker](https://github.com/anishaprakash/openstack-manager/actions/workflows/docker-publish.yml/badge.svg)](https://github.com/anishaprakash/openstack-manager/actions/workflows/docker-publish.yml)
-[![codecov](https://codecov.io/gh/anishaprakash/openstack-manager/branch/main/graph/badge.svg)](https://app.codecov.io/github/anishaprakash/openstack-manager)
+[![codecov](https://codecov.io/github/anishaprakash/openstack-manager/graph/badge.svg?token=9Q8OBXMGH3)](https://codecov.io/github/anishaprakash/openstack-manager)
 [![Python](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.111-009688.svg?logo=fastapi)](https://fastapi.tiangolo.com)
 
