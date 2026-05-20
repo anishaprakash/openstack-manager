@@ -50,7 +50,7 @@ app = FastAPI(
     openapi_tags=[
         {
             "name": "Virtual Machines",
-            "description": "Full lifecycle operations: create, list, get, start, stop, reboot, resize, snapshot, delete.",
+            "description": "Full lifecycle operations: create, list, get, start, stop, reboot.",
         },
         {
             "name": "Health",
