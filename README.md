@@ -5,12 +5,11 @@
 [![codecov](https://codecov.io/github/anishaprakash/openstack-manager/graph/badge.svg?token=9Q8OBXMGH3)](https://codecov.io/github/anishaprakash/openstack-manager)
 [![Python](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.136-009688.svg?logo=fastapi)](https://fastapi.tiangolo.com)
-[![ArgoCD](https://argocd.ranjithsinghu.com/api/badge?name=openstack-vm-manager&revision=true&showAppName=true)](https://argocd.ranjithsinghu.com)
 [![Swagger UI](https://img.shields.io/badge/Swagger%20UI-live-85EA2D.svg?logo=swagger)](https://openstack.anishaprakash.in/docs)
 
 A production-ready REST API for managing the **full lifecycle** of OpenStack virtual machines, built with **FastAPI** and **Poetry**.
 
----
+## [![ArgoCD](https://argocd.ranjithsinghu.com/api/badge?name=openstack-vm-manager&revision=true&showAppName=true)](https://argocd.ranjithsinghu.com)
 
 ## Features
 
