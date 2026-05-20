@@ -1,6 +1,6 @@
 # OpenStack VM Manager
 
-[![codecov](https://codecov.io/gh/anishaprakash/openstack-manager/branch/main/graph/badge.svg)](https://codecov.io/gh/anishaprakash/openstack-manager)
+[![codecov](https://codecov.io/gh/anishaprakash/openstack-manager/branch/main/graph/badge.svg?token=bc8f1602-ce58-4297-8cf3-c31d8e73a6a0)](https://app.codecov.io/github/anishaprakash/openstack-manager)
 
 A production-ready REST API for managing the **full lifecycle** of OpenStack virtual machines, built with **FastAPI** and **Poetry**.
 
