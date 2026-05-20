@@ -1,0 +1,14 @@
+apiVersion: v2
+name: openstack-vm-manager
+description: REST API for OpenStack VM lifecycle management
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+keywords:
+  - openstack
+  - fastapi
+  - vm
+  - lifecycle
+maintainers:
+  - name: Ranjith
+    email: ranjithsinghu@gmail.com

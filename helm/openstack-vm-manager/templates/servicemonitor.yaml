@@ -1,0 +1,20 @@
+{{- if .Values.serviceMonitor.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "openstack-vm-manager.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "openstack-vm-manager.labels" . | nindent 4 }}
+    {{- with .Values.serviceMonitor.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "openstack-vm-manager.selectorLabels" . | nindent 6 }}
+  endpoints:
+    - port: http
+      path: /health
+      interval: 30s
+{{- end }}

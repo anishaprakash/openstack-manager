@@ -1,0 +1,89 @@
+replicaCount: 2
+
+image:
+  repository: ghcr.io/anishaprakash/openstack-manager
+  pullPolicy: IfNotPresent
+  tag: ""  # Defaults to .Chart.appVersion
+
+imagePullSecrets: []
+
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+podAnnotations: {}
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: false   # openstacksdk writes cache to ~/.cache/openstack at runtime
+  capabilities:
+    drop: ["ALL"]
+
+service:
+  type: ClusterIP
+  port: 8000
+  annotations: {}
+    # Uncomment to expose via omni-kube-service-exposer:
+    # omni-kube-service-exposer.sidero.dev/port: "8000"
+    # omni-kube-service-exposer.sidero.dev/label: "OpenStack VM Manager"
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 256Mi
+
+autoscaling:
+  enabled: false
+  minReplicas: 2
+  maxReplicas: 5
+  targetCPUUtilizationPercentage: 80
+
+# Non-sensitive config (goes into ConfigMap)
+config:
+  OS_AUTH_URL: "https://auth.cloud.ovh.net/v3"
+  OS_IDENTITY_API_VERSION: "3"
+  OS_USER_DOMAIN_NAME: "Default"
+  OS_PROJECT_DOMAIN_NAME: "Default"
+  OS_TENANT_ID: ""
+  OS_TENANT_NAME: ""
+  OS_REGION_NAME: "BHS5"
+  APP_TITLE: "OpenStack VM Manager"
+  APP_VERSION: "0.1.0"
+  DEBUG: "false"
+
+# Name of the K8s Secret created by ExternalSecret (do not change)
+existingSecret: openstack-vm-manager-secrets
+
+serviceMonitor:
+  enabled: true
+  labels:
+    release: prometheus
+
+livenessProbe:
+  httpGet:
+    path: /health
+    port: 8000
+  initialDelaySeconds: 10
+  periodSeconds: 30
+
+readinessProbe:
+  httpGet:
+    path: /health
+    port: 8000
+  initialDelaySeconds: 5
+  periodSeconds: 10
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
