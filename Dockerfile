@@ -7,7 +7,7 @@ ENV POETRY_VERSION=2.2.1 \
     POETRY_NO_INTERACTION=1 \
     PATH="/opt/poetry/bin:$PATH"
 
-RUN apt-get update && apt-get install -y --no-install-recommends curl \
+RUN apt-get update && apt-get install -y --no-install-recommends curl build-essential python3-dev \
     && curl -sSL https://install.python-poetry.org | python3 - \
     && apt-get purge -y curl && rm -rf /var/lib/apt/lists/*
 
