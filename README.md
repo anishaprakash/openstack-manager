@@ -9,7 +9,7 @@
 
 A production-ready REST API for managing the **full lifecycle** of OpenStack virtual machines, built with **FastAPI** and **Poetry**.
 
-## [![ArgoCD](https://argocd.ranjithsinghu.com/api/badge?name=openstack-vm-manager&revision=true&showAppName=true)](https://argocd.ranjithsinghu.com)
+## ![ArgoCD](https://argocd.ranjithsinghu.com/api/badge?name=openstack-vm-manager&revision=true&showAppName=true)
 
 ## Features
 
