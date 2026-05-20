@@ -1,6 +1,10 @@
 # OpenStack VM Manager
 
+[![Tests](https://github.com/anishaprakash/openstack-manager/actions/workflows/tests.yml/badge.svg)](https://github.com/anishaprakash/openstack-manager/actions/workflows/tests.yml)
+[![Docker](https://github.com/anishaprakash/openstack-manager/actions/workflows/docker-publish.yml/badge.svg)](https://github.com/anishaprakash/openstack-manager/actions/workflows/docker-publish.yml)
 [![codecov](https://codecov.io/gh/anishaprakash/openstack-manager/branch/main/graph/badge.svg?token=bc8f1602-ce58-4297-8cf3-c31d8e73a6a0)](https://app.codecov.io/github/anishaprakash/openstack-manager)
+[![Python](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.111-009688.svg?logo=fastapi)](https://fastapi.tiangolo.com)
 
 A production-ready REST API for managing the **full lifecycle** of OpenStack virtual machines, built with **FastAPI** and **Poetry**.
 
