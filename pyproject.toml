@@ -6,6 +6,9 @@ authors = ["Ranjith <ranjithsinghu@gmail.com>"]
 readme = "README.md"
 packages = [{include = "app"}]
 
+[tool.poetry.scripts]
+dev = "app._dev:main"
+
 [tool.poetry.dependencies]
 python = "^3.11"
 fastapi = "^0.111.0"

@@ -19,10 +19,11 @@ from unittest.mock import MagicMock, patch
 import pytest
 from fastapi.testclient import TestClient
 
+import app.dependencies as _deps
 from app.main import app
-from app.models.vm import VMAddresses, VMResponse, VMSnapshotResponse, VMStatus
+from app.models.vm import VMAddresses, VMResponse, VMStatus
 
-VALID_API_KEY = "changeme"
+VALID_API_KEY = "test-key"
 AUTH_HEADERS = {"X-API-Key": VALID_API_KEY}
 
 
@@ -52,17 +53,15 @@ FIXTURE_VM = VMResponse(
     updated_at=datetime(2024, 1, 2, tzinfo=timezone.utc),
 )
 
-FIXTURE_SNAPSHOT = VMSnapshotResponse(
-    image_id="snap-1111-2222-3333",
-    snapshot_name="web-server-01-snap",
-    vm_id=FIXTURE_VM.id,
-    status="queued",
-)
-
-
 # ---------------------------------------------------------------------------
 # Mock service fixture
 # ---------------------------------------------------------------------------
+
+
+@pytest.fixture(autouse=True)
+def _override_api_key(monkeypatch):
+    """Force settings.api_key to VALID_API_KEY for every test."""
+    monkeypatch.setattr(_deps.settings, "api_key", VALID_API_KEY)
 
 
 @pytest.fixture()
@@ -77,10 +76,6 @@ def mock_svc() -> MagicMock:
         mock.start_vm.return_value = None
         mock.stop_vm.return_value = None
         mock.reboot_vm.return_value = None
-        mock.resize_vm.return_value = None
-        mock.confirm_resize_vm.return_value = None
-        mock.revert_resize_vm.return_value = None
-        mock.snapshot_vm.return_value = FIXTURE_SNAPSHOT
         yield mock
 
 

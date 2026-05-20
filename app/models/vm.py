@@ -22,8 +22,6 @@ class VMStatus(StrEnum):
     PAUSED = "PAUSED"
     ERROR = "ERROR"
     DELETED = "DELETED"
-    RESIZE = "RESIZE"
-    VERIFY_RESIZE = "VERIFY_RESIZE"
     UNKNOWN = "UNKNOWN"
 
 
@@ -81,30 +79,6 @@ class VMCreateRequest(BaseModel):
     }
 
 
-class VMResizeRequest(BaseModel):
-    """Payload to resize (change the flavor of) a VM."""
-
-    flavor_id: Annotated[str, Field(examples=["m1.medium"])]
-
-    model_config = {
-        "json_schema_extra": {"examples": [{"flavor_id": "m1.medium"}]}
-    }
-
-
-class VMSnapshotRequest(BaseModel):
-    """Payload to create an image snapshot of a running VM."""
-
-    snapshot_name: Annotated[
-        str, Field(min_length=1, max_length=255, examples=["web-server-01-snap-2024"])
-    ]
-
-    model_config = {
-        "json_schema_extra": {
-            "examples": [{"snapshot_name": "web-server-01-snap-2024"}]
-        }
-    }
-
-
 # ---------------------------------------------------------------------------
 # Response models
 # ---------------------------------------------------------------------------
@@ -147,15 +121,6 @@ class VMListResponse(BaseModel):
 
     items: list[VMResponse]
     total: int
-
-
-class VMSnapshotResponse(BaseModel):
-    """Result of a snapshot operation."""
-
-    image_id: str
-    snapshot_name: str
-    vm_id: str
-    status: str = "queued"
 
 
 class MessageResponse(BaseModel):

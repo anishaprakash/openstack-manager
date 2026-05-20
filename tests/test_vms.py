@@ -5,7 +5,7 @@ from __future__ import annotations
 import pytest
 
 from app.exceptions import VMNotFoundError, VMOperationError
-from tests.conftest import AUTH_HEADERS, FIXTURE_SNAPSHOT, FIXTURE_VM
+from tests.conftest import AUTH_HEADERS, FIXTURE_VM
 
 VM_ID = FIXTURE_VM.id
 BASE = "/api/v1/vms"
@@ -144,55 +144,3 @@ class TestPowerOps:
         assert resp.status_code == 404
 
 
-# ---------------------------------------------------------------------------
-# Resize
-# ---------------------------------------------------------------------------
-
-
-class TestResize:
-    def test_resize_accepted(self, client, mock_svc):
-        resp = client.post(f"{BASE}/{VM_ID}/resize", json={"flavor_id": "m1.medium"}, headers=AUTH_HEADERS)
-        assert resp.status_code == 200
-        mock_svc.resize_vm.assert_called_once_with(VM_ID, "m1.medium")
-
-    def test_confirm_resize(self, client, mock_svc):
-        resp = client.post(f"{BASE}/{VM_ID}/resize/confirm", headers=AUTH_HEADERS)
-        assert resp.status_code == 200
-        mock_svc.confirm_resize_vm.assert_called_once_with(VM_ID)
-
-    def test_revert_resize(self, client, mock_svc):
-        resp = client.post(f"{BASE}/{VM_ID}/resize/revert", headers=AUTH_HEADERS)
-        assert resp.status_code == 200
-        mock_svc.revert_resize_vm.assert_called_once_with(VM_ID)
-
-    def test_resize_missing_flavor_returns_422(self, client, mock_svc):
-        resp = client.post(f"{BASE}/{VM_ID}/resize", json={}, headers=AUTH_HEADERS)
-        assert resp.status_code == 422
-
-
-# ---------------------------------------------------------------------------
-# Snapshot
-# ---------------------------------------------------------------------------
-
-
-class TestSnapshot:
-    def test_snapshot_returns_202(self, client, mock_svc):
-        resp = client.post(
-            f"{BASE}/{VM_ID}/snapshot",
-            json={"snapshot_name": "web-server-01-snap"},
-            headers=AUTH_HEADERS,
-        )
-        assert resp.status_code == 202
-        body = resp.json()
-        assert body["vm_id"] == VM_ID
-        assert body["image_id"] == FIXTURE_SNAPSHOT.image_id
-        assert body["status"] == "queued"
-
-    def test_snapshot_not_found(self, client, mock_svc):
-        mock_svc.snapshot_vm.side_effect = VMNotFoundError(VM_ID)
-        resp = client.post(
-            f"{BASE}/{VM_ID}/snapshot",
-            json={"snapshot_name": "snap"},
-            headers=AUTH_HEADERS,
-        )
-        assert resp.status_code == 404

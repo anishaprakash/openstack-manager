@@ -31,7 +31,7 @@ from openstack.compute.v2.server import Server
 
 from app.config import settings
 from app.exceptions import OpenStackConnectionError, VMNotFoundError, VMOperationError
-from app.models.vm import VMAddresses, VMResponse, VMSnapshotResponse, VMStatus
+from app.models.vm import VMAddresses, VMResponse, VMStatus
 
 logger = logging.getLogger(__name__)
 
@@ -120,9 +120,11 @@ class OpenStackVMService:
         try:
             conn = openstack.connect(
                 auth_url=settings.os_auth_url,
+                identity_api_version=settings.os_identity_api_version,
                 username=settings.os_username,
                 password=settings.os_password,
-                project_name=settings.os_project_name,
+                project_name=settings.os_tenant_name,
+                project_id=settings.os_tenant_id or None,
                 user_domain_name=settings.os_user_domain_name,
                 project_domain_name=settings.os_project_domain_name,
                 region_name=settings.os_region_name,
@@ -278,70 +280,3 @@ class OpenStackVMService:
                 f"Failed to {action} VM '{vm_id}': {exc}"
             ) from exc
 
-    # ------------------------------------------------------------------
-    # Resize
-    # ------------------------------------------------------------------
-
-    def resize_vm(self, vm_id: str, flavor_id: str) -> None:
-        """Resize a server to a different flavor.
-
-        After Nova schedules the resize, the server moves into
-        ``VERIFY_RESIZE`` state.  The caller should subsequently call
-        ``confirm_resize_vm`` or ``revert_resize_vm``.
-        """
-        conn = self._connect()
-        try:
-            conn.compute.resize_server(vm_id, flavor_id)
-        except openstack.exceptions.ResourceNotFound as exc:
-            raise VMNotFoundError(vm_id) from exc
-        except openstack.exceptions.SDKException as exc:
-            logger.exception("resize_vm(%s) failed: %s", vm_id, exc)
-            raise VMOperationError(f"Failed to resize VM '{vm_id}': {exc}", status_code=422) from exc
-
-    def confirm_resize_vm(self, vm_id: str) -> None:
-        """Confirm a pending resize (moves server to ACTIVE)."""
-        conn = self._connect()
-        try:
-            conn.compute.confirm_server_resize(vm_id)
-        except openstack.exceptions.ResourceNotFound as exc:
-            raise VMNotFoundError(vm_id) from exc
-        except openstack.exceptions.SDKException as exc:
-            raise VMOperationError(f"Failed to confirm resize for VM '{vm_id}': {exc}") from exc
-
-    def revert_resize_vm(self, vm_id: str) -> None:
-        """Revert a pending resize (returns server to original flavor)."""
-        conn = self._connect()
-        try:
-            conn.compute.revert_server_resize(vm_id)
-        except openstack.exceptions.ResourceNotFound as exc:
-            raise VMNotFoundError(vm_id) from exc
-        except openstack.exceptions.SDKException as exc:
-            raise VMOperationError(f"Failed to revert resize for VM '{vm_id}': {exc}") from exc
-
-    # ------------------------------------------------------------------
-    # Snapshot
-    # ------------------------------------------------------------------
-
-    def snapshot_vm(self, vm_id: str, snapshot_name: str) -> VMSnapshotResponse:
-        """Create an image snapshot of the server's root disk.
-
-        Returns immediately once Nova has accepted the request; the image
-        moves through ``queued`` → ``saving`` → ``active`` asynchronously.
-        """
-        conn = self._connect()
-        try:
-            image_id = conn.compute.create_server_image(vm_id, name=snapshot_name)
-            # create_server_image returns the image ID string in openstacksdk ≥ 1.x
-            return VMSnapshotResponse(
-                image_id=str(image_id),
-                snapshot_name=snapshot_name,
-                vm_id=vm_id,
-                status="queued",
-            )
-        except openstack.exceptions.ResourceNotFound as exc:
-            raise VMNotFoundError(vm_id) from exc
-        except openstack.exceptions.SDKException as exc:
-            logger.exception("snapshot_vm(%s) failed: %s", vm_id, exc)
-            raise VMOperationError(
-                f"Failed to snapshot VM '{vm_id}': {exc}", status_code=422
-            ) from exc

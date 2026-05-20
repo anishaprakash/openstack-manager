@@ -1,5 +1,7 @@
 # OpenStack VM Manager
 
+[![codecov](https://codecov.io/gh/anishaprakash/openstack-manager/branch/main/graph/badge.svg)](https://codecov.io/gh/anishaprakash/openstack-manager)
+
 A production-ready REST API for managing the **full lifecycle** of OpenStack virtual machines, built with **FastAPI** and **Poetry**.
 
 ---
@@ -69,10 +71,6 @@ All endpoints live under `/api/v1/vms` and require the `X-API-Key` header.
 | `POST`   | `/api/v1/vms/{id}/start`          | Start a stopped VM                    |
 | `POST`   | `/api/v1/vms/{id}/stop`           | Stop a running VM                     |
 | `POST`   | `/api/v1/vms/{id}/reboot`         | Reboot (`?hard=true` for hard reboot) |
-| `POST`   | `/api/v1/vms/{id}/resize`         | Resize to a new flavor                |
-| `POST`   | `/api/v1/vms/{id}/resize/confirm` | Confirm pending resize                |
-| `POST`   | `/api/v1/vms/{id}/resize/revert`  | Revert pending resize                 |
-| `POST`   | `/api/v1/vms/{id}/snapshot`       | Create a Glance image snapshot        |
 | `GET`    | `/health`                         | Liveness probe (no auth required)     |
 
 ### Example: Create a VM
@@ -90,15 +88,6 @@ curl -X POST http://localhost:8000/api/v1/vms \
     "security_groups": ["default", "web"],
     "metadata": {"env": "prod"}
   }'
-```
-
-### Example: Snapshot a VM
-
-```bash
-curl -X POST http://localhost:8000/api/v1/vms/<vm-id>/snapshot \
-  -H "X-API-Key: changeme" \
-  -H "Content-Type: application/json" \
-  -d '{"snapshot_name": "web-server-01-snap-2024"}'
 ```
 
 ---
@@ -182,14 +171,18 @@ The Dockerfile uses a builder stage to install Poetry + dependencies into a `.ve
 
 All configuration is read from environment variables (or `.env`).
 
-| Variable                 | Default                    | Description                                 |
-| ------------------------ | -------------------------- | ------------------------------------------- |
-| `API_KEY`                | `changeme`                 | Secret key clients must send in `X-API-Key` |
-| `OS_AUTH_URL`            | `http://localhost:5000/v3` | Keystone endpoint                           |
-| `OS_USERNAME`            | `admin`                    | OpenStack username                          |
-| `OS_PASSWORD`            | `secret`                   | OpenStack password                          |
-| `OS_PROJECT_NAME`        | `admin`                    | Project / tenant name                       |
-| `OS_USER_DOMAIN_NAME`    | `Default`                  | User domain                                 |
-| `OS_PROJECT_DOMAIN_NAME` | `Default`                  | Project domain                              |
-| `OS_REGION_NAME`         | `RegionOne`                | Nova region                                 |
-| `DEBUG`                  | `false`                    | Enable debug logging                        |
+| Variable                  | Default                    | Description                                        |
+| ------------------------- | -------------------------- | -------------------------------------------------- |
+| `API_KEY`                 | `changeme`                 | Secret key clients must send in `X-API-Key`        |
+| `OS_AUTH_URL`             | `http://localhost:5000/v3` | Keystone endpoint                                  |
+| `OS_IDENTITY_API_VERSION` | `3`                        | Keystone API version                               |
+| `OS_USERNAME`             | `admin`                    | OpenStack username                                 |
+| `OS_PASSWORD`             | `secret`                   | OpenStack password                                 |
+| `OS_TENANT_NAME`          | `admin`                    | Project / tenant name                              |
+| `OS_TENANT_ID`            | _(empty)_                  | Project UUID — takes precedence over name when set |
+| `OS_USER_DOMAIN_NAME`     | `Default`                  | User domain                                        |
+| `OS_PROJECT_DOMAIN_NAME`  | `Default`                  | Project domain                                     |
+| `OS_REGION_NAME`          | `RegionOne`                | Nova / compute region                              |
+| `APP_TITLE`               | `OpenStack VM Manager`     | API title shown in Swagger UI                      |
+| `APP_VERSION`             | `0.1.0`                    | API version shown in Swagger UI                    |
+| `DEBUG`                   | `false`                    | Enable debug logging                               |

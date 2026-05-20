@@ -15,9 +15,11 @@ class Settings(BaseSettings):
 
     # --- OpenStack connection ---
     os_auth_url: str = "http://localhost:5000/v3"
+    os_identity_api_version: int = 3
     os_username: str = "admin"
     os_password: str = "secret"
-    os_project_name: str = "admin"
+    os_tenant_name: str = "admin"
+    os_tenant_id: str = ""
     os_user_domain_name: str = "Default"
     os_project_domain_name: str = "Default"
     os_region_name: str = "RegionOne"

@@ -20,10 +20,7 @@ from app.models.vm import (
     MessageResponse,
     VMCreateRequest,
     VMListResponse,
-    VMResizeRequest,
     VMResponse,
-    VMSnapshotRequest,
-    VMSnapshotResponse,
 )
 from app.services.openstack_service import OpenStackVMService
 
@@ -183,63 +180,3 @@ async def reboot_vm(
     return MessageResponse(message=f"{reboot_type} request accepted", vm_id=vm_id)
 
 
-# ---------------------------------------------------------------------------
-# Resize
-# ---------------------------------------------------------------------------
-
-
-@router.post(
-    "/{vm_id}/resize",
-    response_model=MessageResponse,
-    summary="Resize a virtual machine",
-    description=(
-        "Change a VM's flavor (CPU/RAM/disk). The VM moves to **VERIFY_RESIZE** state. "
-        "Call `POST /vms/{vm_id}/resize/confirm` to accept or "
-        "`POST /vms/{vm_id}/resize/revert` to roll back."
-    ),
-)
-async def resize_vm(vm_id: str, body: VMResizeRequest) -> MessageResponse:
-    await _run(_svc.resize_vm, vm_id, body.flavor_id)
-    return MessageResponse(message="Resize request accepted", vm_id=vm_id)
-
-
-@router.post(
-    "/{vm_id}/resize/confirm",
-    response_model=MessageResponse,
-    summary="Confirm a pending resize",
-    description="Confirm a resize that is in **VERIFY_RESIZE** state, moving the VM to **ACTIVE**.",
-)
-async def confirm_resize(vm_id: str) -> MessageResponse:
-    await _run(_svc.confirm_resize_vm, vm_id)
-    return MessageResponse(message="Resize confirmed", vm_id=vm_id)
-
-
-@router.post(
-    "/{vm_id}/resize/revert",
-    response_model=MessageResponse,
-    summary="Revert a pending resize",
-    description="Revert a resize that is in **VERIFY_RESIZE** state, restoring the original flavor.",
-)
-async def revert_resize(vm_id: str) -> MessageResponse:
-    await _run(_svc.revert_resize_vm, vm_id)
-    return MessageResponse(message="Resize reverted", vm_id=vm_id)
-
-
-# ---------------------------------------------------------------------------
-# Snapshot
-# ---------------------------------------------------------------------------
-
-
-@router.post(
-    "/{vm_id}/snapshot",
-    response_model=VMSnapshotResponse,
-    status_code=status.HTTP_202_ACCEPTED,
-    summary="Snapshot a virtual machine",
-    description=(
-        "Create a Glance image snapshot of a VM's root disk. "
-        "Returns **202 Accepted** immediately; the image transitions asynchronously "
-        "through `queued → saving → active`."
-    ),
-)
-async def snapshot_vm(vm_id: str, body: VMSnapshotRequest) -> VMSnapshotResponse:
-    return await _run(_svc.snapshot_vm, vm_id, body.snapshot_name)
