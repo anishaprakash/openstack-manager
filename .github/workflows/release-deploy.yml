@@ -1,0 +1,84 @@
+name: Release → Deploy
+
+# Triggers when a GitHub release is published (e.g. v0.1.0).
+# 1. Extracts the semver (strips the leading "v")
+# 2. Clones the deployment repo (DEPLOYMENT_REPO secret — GitLab)
+# 3. Patches the ArgoCD Application manifest with the new tag
+# 4. Pushes back → ArgoCD auto-syncs the new version
+#
+# Required secrets:
+#   DEPLOYMENT_TOKEN    — Git OAuth2 token
+#   DEPLOYMENT_REPO     — e.g. org/homelab
+#   DEPLOYMENT_HOST     — e.g. github.com / gitlab.com
+#   DEPLOYMENT_MANIFEST — path inside repo, e.g. apps/project/openstack-vm-manager/openstack-vm-manager.yaml
+#
+# Env vars (set below):
+#   DEPLOYMENT_BRANCH   — branch to push to in the deployment repo
+#   DOCKER_IMAGE        — container image name
+
+on:
+  release:
+    types: [published]
+
+env:
+  DEPLOYMENT_BRANCH: main
+  DOCKER_IMAGE: ghcr.io/anishaprakash/openstack-manager
+
+jobs:
+  update-cluster-manifest:
+    name: Bump version in cluster repo
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Derive semver from release tag
+        id: ver
+        run: |
+          TAG="${{ github.event.release.tag_name }}"
+          SEMVER="${TAG#v}"
+          echo "tag=$TAG"       >> "$GITHUB_OUTPUT"
+          echo "semver=$SEMVER" >> "$GITHUB_OUTPUT"
+
+      - name: Clone deployment repo
+        id: clone
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ secrets.DEPLOYMENT_REPO }}
+          token: ${{ secrets.DEPLOYMENT_TOKEN }}
+          path: deployment
+        continue-on-error: true   # fallback to manual clone below
+
+      - name: Clone via git (GitLab fallback)
+        if: steps.clone.outcome == 'failure' || always()
+        run: |
+          rm -rf deployment
+          git clone https://oauth2:${{ secrets.DEPLOYMENT_TOKEN }}@${{ secrets.DEPLOYMENT_HOST }}/${{ secrets.DEPLOYMENT_REPO }}.git deployment
+
+      - name: Patch ArgoCD Application manifest
+        run: |
+          SEMVER="${{ steps.ver.outputs.semver }}"
+          TAG="${{ steps.ver.outputs.tag }}"
+          MANIFEST="deployment/${{ secrets.DEPLOYMENT_MANIFEST }}"
+
+          sed -i "s|tag: .*|tag: \"${SEMVER}\"|" "$MANIFEST"
+          sed -i "s|targetRevision: .*|targetRevision: \"${TAG}\"|" "$MANIFEST"
+
+          echo "=== Patched manifest ==="
+          grep -E "tag:|targetRevision:" "$MANIFEST"
+
+      - name: Commit and push
+        run: |
+          cd deployment
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git add "${{ secrets.DEPLOYMENT_MANIFEST }}"
+
+          git diff --cached --quiet && echo "No changes to commit" && exit 0
+
+          git commit -m "chore: deploy openstack-vm-manager ${{ steps.ver.outputs.tag }}
+
+          Image: ${{ env.DOCKER_IMAGE }}:${{ steps.ver.outputs.semver }}
+          Chart ref: ${{ steps.ver.outputs.tag }}
+          Triggered by: ${{ github.event.release.html_url }}"
+
+          git push https://oauth2:${{ secrets.DEPLOYMENT_TOKEN }}@${{ secrets.DEPLOYMENT_HOST }}/${{ secrets.DEPLOYMENT_REPO }}.git ${{ env.DEPLOYMENT_BRANCH }}
