@@ -33,18 +33,11 @@ app = FastAPI(
         "A production-ready REST API for managing the **full lifecycle** of "
         "OpenStack virtual machines.  \n\n"
         "All endpoints require an `X-API-Key` header for authentication.\n\n"
-        "## VM Lifecycle\n"
-        "```\n"
-        "CREATE → BUILD → ACTIVE ⟷ SHUTOFF\n"
-        "                  ↓\n"
-        "              VERIFY_RESIZE\n"
-        "                  ↓\n"
-        "           confirm / revert\n"
-        "```\n"
+        "## VM Lifecycle"
     ),
     contact={
-        "name": "Ranjith",
-        "email": "ranjithsinghu@gmail.com",
+        "name": "Anisha Prakash",
+        "email": "anishaprakashca@gmail.com",
     },
     license_info={"name": "MIT"},
     openapi_tags=[

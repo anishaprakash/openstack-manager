@@ -13,7 +13,7 @@ A production-ready REST API for managing the **full lifecycle** of OpenStack vir
 
 ## Features
 
-- Full VM lifecycle: create, list, get, start, stop, reboot, resize (with confirm/revert), snapshot, delete
+- Full VM lifecycle: create, list, get, start, stop, reboot
 - Real OpenStack integration via `openstacksdk`
 - API key authentication (`X-API-Key` header)
 - Async endpoints (sync SDK calls offloaded via `asyncio.to_thread`)

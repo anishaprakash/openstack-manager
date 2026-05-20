@@ -2,7 +2,7 @@
 name = "openstack-vm-manager"
 version = "0.1.0"
 description = "REST API for OpenStack VM lifecycle management"
-authors = ["Ranjith <ranjithsinghu@gmail.com>"]
+authors = ["Anisha <anishaprakaskca@gmail.com>"]
 readme = "README.md"
 packages = [{include = "app"}]
 
