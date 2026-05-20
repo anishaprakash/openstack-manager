@@ -4,14 +4,17 @@ FROM python:3.11-slim AS builder
 ENV POETRY_VERSION=1.8.3 \
     POETRY_HOME=/opt/poetry \
     POETRY_VIRTUALENVS_IN_PROJECT=true \
-    POETRY_NO_INTERACTION=1
+    POETRY_NO_INTERACTION=1 \
+    PATH="/opt/poetry/bin:$PATH"
 
-RUN pip install --no-cache-dir "poetry==${POETRY_VERSION}"
+RUN apt-get update && apt-get install -y --no-install-recommends curl \
+    && curl -sSL https://install.python-poetry.org | python3 - \
+    && apt-get purge -y curl && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 COPY pyproject.toml poetry.lock* ./
 # Install only main (non-dev) dependencies
-RUN /opt/poetry/bin/poetry install --only main --no-root
+RUN poetry install --only main --no-root
 
 # ─── Runtime stage ────────────────────────────────────────────────────────────
 FROM python:3.11-slim AS runtime
