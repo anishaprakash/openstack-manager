@@ -2,9 +2,9 @@ name: Release → Deploy
 
 # Triggers when a GitHub release is published (e.g. v0.1.0).
 # 1. Extracts the semver (strips the leading "v")
-# 2. Clones the deployment repo (DEPLOYMENT_REPO secret — GitLab)
+# 2. Clones the deployment repo
 # 3. Patches the ArgoCD Application manifest with the new tag
-# 4. Pushes back → ArgoCD auto-syncs the new version
+# 4. Pushes to a deploy branch, then merges PR to the deployment branch (e.g. main)
 #
 # Required secrets:
 #   DEPLOYMENT_TOKEN    — Git OAuth2 token
@@ -13,7 +13,7 @@ name: Release → Deploy
 #   DEPLOYMENT_MANIFEST — path inside repo, e.g. apps/project/openstack-vm-manager/openstack-vm-manager.yaml
 #
 # Env vars (set below):
-#   DEPLOYMENT_BRANCH   — branch to push to in the deployment repo
+#   DEPLOYMENT_BRANCH   — target branch in the deployment repo
 #   DOCKER_IMAGE        — container image name
 
 on:
@@ -35,50 +35,84 @@ jobs:
         run: |
           TAG="${{ github.event.release.tag_name }}"
           SEMVER="${TAG#v}"
-          echo "tag=$TAG"       >> "$GITHUB_OUTPUT"
-          echo "semver=$SEMVER" >> "$GITHUB_OUTPUT"
+          DEPLOY_BRANCH="deploy/openstack-vm-manager-${TAG}"
+          echo "tag=$TAG"               >> "$GITHUB_OUTPUT"
+          echo "semver=$SEMVER"         >> "$GITHUB_OUTPUT"
+          echo "branch=$DEPLOY_BRANCH"  >> "$GITHUB_OUTPUT"
 
       - name: Clone deployment repo
-        id: clone
-        uses: actions/checkout@v4
-        with:
-          repository: ${{ secrets.DEPLOYMENT_REPO }}
-          token: ${{ secrets.DEPLOYMENT_TOKEN }}
-          path: deployment
-        continue-on-error: true   # fallback to manual clone below
-
-      - name: Clone via git (GitLab fallback)
-        if: steps.clone.outcome == 'failure' || always()
         run: |
-          rm -rf deployment
-          git clone https://oauth2:${{ secrets.DEPLOYMENT_TOKEN }}@${{ secrets.DEPLOYMENT_HOST }}/${{ secrets.DEPLOYMENT_REPO }}.git deployment
+          git clone \
+            https://oauth2:${{ secrets.DEPLOYMENT_TOKEN }}@${{ secrets.DEPLOYMENT_HOST }}/${{ secrets.DEPLOYMENT_REPO }}.git \
+            deployment
 
-      - name: Patch ArgoCD Application manifest
-        run: |
-          SEMVER="${{ steps.ver.outputs.semver }}"
-          TAG="${{ steps.ver.outputs.tag }}"
-          MANIFEST="deployment/${{ secrets.DEPLOYMENT_MANIFEST }}"
-
-          sed -i "s|tag: .*|tag: \"${SEMVER}\"|" "$MANIFEST"
-          sed -i "s|targetRevision: .*|targetRevision: \"${TAG}\"|" "$MANIFEST"
-
-          echo "=== Patched manifest ==="
-          grep -E "tag:|targetRevision:" "$MANIFEST"
-
-      - name: Commit and push
+      - name: Create deploy branch and patch manifest
         run: |
           cd deployment
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          git add "${{ secrets.DEPLOYMENT_MANIFEST }}"
+          # Create a fresh branch off main
+          git checkout -b "${{ steps.ver.outputs.branch }}"
 
-          git diff --cached --quiet && echo "No changes to commit" && exit 0
+          SEMVER="${{ steps.ver.outputs.semver }}"
+          TAG="${{ steps.ver.outputs.tag }}"
+          MANIFEST="${{ secrets.DEPLOYMENT_MANIFEST }}"
 
-          git commit -m "chore: deploy openstack-vm-manager ${{ steps.ver.outputs.tag }}
+          sed -i "s|tag: .*|tag: \"${SEMVER}\"|"             "$MANIFEST"
+          sed -i "s|targetRevision: .*|targetRevision: \"${TAG}\"|" "$MANIFEST"
 
-          Image: ${{ env.DOCKER_IMAGE }}:${{ steps.ver.outputs.semver }}
-          Chart ref: ${{ steps.ver.outputs.tag }}
+          echo "=== Patched manifest ==="
+          grep -E "tag:|targetRevision:" "$MANIFEST"
+
+          git add "$MANIFEST"
+          git diff --cached --quiet && echo "Nothing changed" && exit 0
+
+          git commit -m "chore: deploy openstack-vm-manager ${TAG}
+
+          Image: ${{ env.DOCKER_IMAGE }}:${SEMVER}
+          Chart ref: ${TAG}
           Triggered by: ${{ github.event.release.html_url }}"
 
-          git push https://oauth2:${{ secrets.DEPLOYMENT_TOKEN }}@${{ secrets.DEPLOYMENT_HOST }}/${{ secrets.DEPLOYMENT_REPO }}.git ${{ env.DEPLOYMENT_BRANCH }}
+          git push \
+            https://oauth2:${{ secrets.DEPLOYMENT_TOKEN }}@${{ secrets.DEPLOYMENT_HOST }}/${{ secrets.DEPLOYMENT_REPO }}.git \
+            "${{ steps.ver.outputs.branch }}"
+
+      - name: Create and merge GitLab MR
+        env:
+          GL_TOKEN: ${{ secrets.DEPLOYMENT_TOKEN }}
+          GL_HOST: ${{ secrets.DEPLOYMENT_HOST }}
+          GL_REPO: ${{ secrets.DEPLOYMENT_REPO }}
+        run: |
+          TAG="${{ steps.ver.outputs.tag }}"
+          SEMVER="${{ steps.ver.outputs.semver }}"
+          BRANCH="${{ steps.ver.outputs.branch }}"
+
+          # URL-encode the project path (replace / with %2F)
+          PROJECT_ID=$(python3 -c "import urllib.parse, sys; print(urllib.parse.quote(sys.argv[1], safe=''))" "$GL_REPO")
+          API="https://${GL_HOST}/api/v4/projects/${PROJECT_ID}/merge_requests"
+
+          # Create MR
+          MR=$(curl -s --fail-with-body -X POST "$API" \
+            -H "PRIVATE-TOKEN: ${GL_TOKEN}" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"source_branch\": \"${BRANCH}\",
+              \"target_branch\": \"${{ env.DEPLOYMENT_BRANCH }}\",
+              \"title\": \"chore: deploy openstack-vm-manager ${TAG}\",
+              \"description\": \"Automated release deploy\\n\\nImage: \`${{ env.DOCKER_IMAGE }}:${SEMVER}\`\\nTriggered by: ${{ github.event.release.html_url }}\",
+              \"remove_source_branch\": true,
+              \"squash\": true
+            }")
+
+          MR_IID=$(echo "$MR" | python3 -c "import json,sys; print(json.load(sys.stdin)['iid'])")
+          echo "Created MR !${MR_IID}"
+
+          # Wait briefly for MR to be mergeable, then merge
+          sleep 5
+          curl -s --fail-with-body -X PUT \
+            "https://${GL_HOST}/api/v4/projects/${PROJECT_ID}/merge_requests/${MR_IID}/merge" \
+            -H "PRIVATE-TOKEN: ${GL_TOKEN}" \
+            -H "Content-Type: application/json" \
+            -d "{\"squash\": true, \"should_remove_source_branch\": true}" \
+            | python3 -c "import json,sys; d=json.load(sys.stdin); print(f'Merged: {d.get(\"state\")} — {d.get(\"web_url\",\"\")}')"
